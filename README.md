@@ -1,5 +1,18 @@
 # Baseline Predictive Pipeline -- ETAI
 
+20231723 Tiago Mota
+
+## CONCLUSIONS 
+We can see that in the logistic regression we have a train accuracy score of 0.677 and a training of 0.675. On the other hand, using decision trees, we get training accuracy score of 0.829 and 0.626 in the test. We can notice a much bigger difference of scores using the decision tree. This means that it memorized the data rather than doing what linear regression will do better, that is generalize better for unseen data. This is overfitting. 
+
+We can also see that the results for precision, recall and F1 score were respectively: 
+0.61, 0.48, 0.54 - decision trees
+0.66, 0.6, 0.63 - logistic regression
+
+Here we can also notice that when using the logistic regression model we get both precision and recall higher values, which also leads to a higher F1 score and which means that this will lead to a higher rate of correct results.
+
+# #AAAAAAA
+
 This is the **starting point** for your semester project: a small but *complete* predictive pipeline -- every piece a real project needs (entry point, config, data loading, preprocessing, model, evaluation), just kept as simple as possible for now.
 
 The task: predict two-year recidivism using ProPublica's COMPAS

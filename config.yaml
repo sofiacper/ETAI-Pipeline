@@ -12,9 +12,8 @@ split:
   random_state: 42
 
 model:
-  type: "logistic_regression"   # or "decision_tree"
-  params:
-    max_iter: 1000
+  type: "decision_tree"   # or "decision_tree"
+  params: {}
 
 output:
   results_dir: "results"   # each run's full report is saved here as a timestamped .txt file
