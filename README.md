@@ -11,7 +11,13 @@ We can also see that the results for precision, recall and F1 score were respect
 
 Here we can also notice that when using the logistic regression model we get both precision and recall higher values, which also leads to a higher F1 score and which means that this will lead to a higher rate of correct results.
 
-# #AAAAAAA
+---------------
+(para dar push e pull faço: 
+git add .
+git commit -m "something"
+git push)
+
+--------------------
 
 This is the **starting point** for your semester project: a small but *complete* predictive pipeline -- every piece a real project needs (entry point, config, data loading, preprocessing, model, evaluation), just kept as simple as possible for now.
 
