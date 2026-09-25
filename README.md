@@ -3,6 +3,8 @@
 20231723 Tiago Mota
 
 ## CONCLUSIONS 
+
+# Week 2
 We can see that in the logistic regression we have a train accuracy score of 0.677 and a training of 0.675. On the other hand, using decision trees, we get training accuracy score of 0.829 and 0.626 in the test. We can notice a much bigger difference of scores using the decision tree. This means that it memorized the data rather than doing what linear regression will do better, that is generalize better for unseen data. This is overfitting. 
 
 We can also see that the results for precision, recall and F1 score were respectively: 
@@ -10,6 +12,17 @@ We can also see that the results for precision, recall and F1 score were respect
 0.66, 0.6, 0.63 - logistic regression
 
 Here we can also notice that when using the logistic regression model we get both precision and recall higher values, which also leads to a higher F1 score and which means that this will lead to a higher rate of correct results.
+
+----------------------
+# Week 3
+We can see that in last week, in the decision tree, the tree was completely memorizing the training data leading to massive overfitting. The train accuracy was 82.9% but the test accuracy was only 62.6% (a giant gap of +0.2). 
+We see that we get different results from when we add the max depth = 5 and when there is no max depth defined. Train Accuracy	0.792 (79.2%) for the unrestricted tree and	0.684 (68.4%) for the restricted one. Test Accuracy	of 0.611 (61.1%) in the unrestricted and	0.665 (66.5%) for the restricted. This means we get a smaller discrepancy in the restricted on of +0.02, which is way better. This is because by adding max_depth: 5, we stopped it from growing too deep.
+
+In the logistic regreesion the test accuracy went down slightly (from 67.5% to 65.7%). It just means the model is now being tested on a more realistic dataset instead of a perfectly filtered one.
+
+In the previous week, the race categories were a mess. We had duplicates like "African-American" vs "AFRICAN-AMERICAN" and extra signs like "-" or "?". Now, the pipeline cleans all of this up, groups everything correctly into 6 categories, and turns the weird symbols into missing values.
+
+Because of this, now we can make some interpretations: The original COMPAS score has a False Positive Rate (FPR) of 44% for African-Americans (meaning 44% of innocent people in this group were predicted to reoffend), compared to only 24% for Caucasians. We managed to drop the FPR for African-Americans down to 28%. There is still a gap (Caucasian FPR is 14-16%), which means the historical bias in the dataset is still there, but our model is already way less biased than the actual system used in courts.
 
 ---------------
 (para dar push e pull faço: 
