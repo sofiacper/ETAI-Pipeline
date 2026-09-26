@@ -1,3 +1,14 @@
+"""
+Entry point for the baseline predictive pipeline.
+
+Run with:
+    python main.py
+
+This orchestrates the full pipeline:
+    load config -> load data -> diagnose/clean (week 3) -> split features/target
+    -> leak-safe train/test split -> preprocess + train (week 3's encoder/scaler pair)
+    -> evaluate (accuracy, fairness) -> save results
+"""
 import yaml
 from sklearn.pipeline import Pipeline
 
