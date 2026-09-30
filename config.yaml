@@ -89,20 +89,10 @@ preprocessing:
     categorical_strategy: "most_frequent"   # applies to sex, age_cat, c_charge_degree
 
 model:
-  # one of: "dummy" (majority-class floor), "logistic_regression", "decision_tree", "random_forest"
-  # (random forest: sensible defaults, untuned -- see the example below)
-  type: "logistic_regression"
+  type: "decision_tree"   # or "decision_tree"
   params:
-    # bumped from 1000 -- with this week's encoder/scaler pair in place, 1000 iterations
-    # was cutting lbfgs off before it converged (a ConvergenceWarning, not a real problem,
-    # but worth just giving it enough room rather than living with the warning)
-    max_iter: 2000
-  # Random Forest example -- swap the two lines above for these to run it:
-  # type: "random_forest"
-  # params:
-  #   n_estimators: 300
-  #   random_state: 42   # forests are random (bootstrap rows + random feature subsets): fix the seed
-  #   n_jobs: -1         # use every CPU core -- the trees are independent, so they train in parallel
+    #max_iter: 1000
+    max_depth: 15
 
 output:
   results_dir: "results"   # each run's full report is saved here as a timestamped .txt file

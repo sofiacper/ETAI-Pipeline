@@ -1,0 +1,63 @@
+{
+  "source_file": "data/compas_two_year_recidivism.csv",
+  "n_rows_raw": 7286,
+  "missingness_verdicts": {
+    "age": "MCAR",
+    "juv_fel_count": "MCAR",
+    "priors_count": "MNAR",
+    "c_charge_degree": "MNAR",
+    "race": "MCAR",
+    "sex": "MCAR"
+  },
+  "domain_rules": {
+    "age": "18 <= age <= 100",
+    "decile_score": "1 <= decile_score <= 10",
+    "juv_fel_count": "juv_fel_count >= 0",
+    "priors_count": "0 <= priors_count <= 60"
+  },
+  "placeholder_tokens": [
+    "",
+    "-",
+    "?",
+    "N/A",
+    "NA",
+    "n/a",
+    "na"
+  ],
+  "canonical_maps": {
+    "sex": {
+      "male": "Male",
+      "female": "Female"
+    },
+    "race": {
+      "african-american": "African-American",
+      "african american": "African-American",
+      "caucasian": "Caucasian",
+      "hispanic": "Hispanic",
+      "other": "Other",
+      "asian": "Asian",
+      "native american": "Native American"
+    },
+    "c_charge_degree": {
+      "f": "F",
+      "felony": "F",
+      "m": "M",
+      "misdemeanor": "M"
+    },
+    "score_text": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High"
+    }
+  },
+  "columns_to_drop": [
+    "prior_offenses",
+    "age_in_months",
+    "juvenile_total",
+    "id"
+  ],
+  "duplicate_check": {
+    "exact_row_duplicates": 72,
+    "repeated_ids": 72
+  }
+}

@@ -1,4 +1,15 @@
 # Baseline Predictive Pipeline -- ETAI
+Luis Soeiro 20211536
+
+**CONCLUSIONS SUMMARY**
+
+The logistic regression model performed slightly better overall, achieving a higher test accuracy than the decision tree (0.677 vs. 0.668). Both models have relatively small differences between training and test accuracy, with gaps of 0.001 and 0.012 respectively, indicating no clear signs of overfitting.
+
+Looking at the classification metrics in more detail, the two models exhibit different performance characteristics. Logistic regression performs better at identifying non-recidivists (class 0), achieving a higher recall (0.74 vs. 0.68) and F1-score (0.72 vs. 0.69). In contrast, the decision tree performs better at identifying recidivists (class 1), with higher recall (0.65 vs. 0.60) and a slightly higher F1-score (0.64 vs. 0.63). Therefore, the decision tree improves the detection of recidivism at the expense of performance on non-recidivists, rather than providing an overall improvement. Nevertheless, it is important to understand that only a simple model was used on noth logistic regression and decision tree, meaning no optimal / different parameters were considered to undertand which model could further improve the results
+
+Regarding the fairness analysis, the results cannot yet be considered reliable because the race variable contains inconsistent representations of the same categories. The race categories should therefore be standardized and the false-positive rates recalculated before drawing conclusions about differences between the models and COMPAS.
+
+
 
 This is the **starting point** for your semester project: a small but *complete* predictive pipeline -- every piece a real project needs (entry point, config, data loading, preprocessing, model, evaluation), just kept as simple as possible for now.
 
