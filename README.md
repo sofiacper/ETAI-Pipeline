@@ -25,6 +25,28 @@ In the previous week, the race categories were a mess. We had duplicates like "A
 Because of this, now we can make some interpretations: The original COMPAS score has a False Positive Rate (FPR) of 44% for African-Americans (meaning 44% of innocent people in this group were predicted to reoffend), compared to only 24% for Caucasians. We managed to drop the FPR for African-Americans down to 28%. There is still a gap (Caucasian FPR is 14-16%), which means the historical bias in the dataset is still there, but our model is already way less biased than the actual system used in courts.
 
 ---------------
+# Week 4
+
+(This is using holdout method only (80-20), cross validadtion is only used next week)
+
+When using logistic regression we got training accuracy of 67.6% and a test accuracy of 65.8%. The gap between the two was only +0.018 and so there is no overfitting. When talking about random forest, we clearly got overfitted results.It reached a 72.8% training accuracy, but test performance dropped to 64.4% (lower than the Logistic Regression). The gap spiked to +0.084.
+
+(Precision vs. Recall)
+
+  - Logistic Regression:When predicting an individual would reoffend (class 1), it was correct 66% of the time (precision = 0.66), though it missed more than half of the actual reoffenders (recall = 0.48).
+
+  - Random Forest: Class 1 recall up to 0.59.precision dropped to 0.61, meaning the algorithm triggered false alarms much more frequently to capture that larger volume.
+
+
+Fairness Analysis and Demographic Impact (FPR)
+
+  - Logistic Regression: Significantly reduced demographic disparities. The False Positive Rate (share of people who did not reoffend but were incorrectly predicted to do so) dropped to 28% for the African-American population and 14% for the Caucasian population.
+
+  - Random Forest: Dangerously mirrored the original bias of the COMPAS system. To achieve its higher recall, the model sacrificed true negatives, driving the False Positive Rate up to 42% for the African-American population (nearly matching COMPAS's own 44%) and 23% for the Caucasian population.
+
+  
+For now, we are still chosing to use LOGISTIC REGRESSION.
+-----------------------
 (para dar push e pull faço: 
 git add .
 git commit -m "something"
