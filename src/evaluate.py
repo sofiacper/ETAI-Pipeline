@@ -48,18 +48,28 @@ def oof_classification_report(y_true, oof_proba, threshold: float = 0.5) -> str:
 
 def fairness_report(y_true, oof_proba, extras: pd.DataFrame, sensitive_attr: str = "race",
                     threshold: float = 0.5) -> str:
+    if extras is None or sensitive_attr not in extras.columns:
+        return "No sensitive attribute provided for fairness report."
+        
     df = extras.copy()
     df[sensitive_attr] = df[sensitive_attr].astype(object).fillna("unknown")
     df["y_true"] = pd.Series(y_true).values
     df["y_pred_model"] = (oof_proba >= threshold).astype(int)
-    df["y_pred_compas"] = (df["score_text"] != "Low").astype(int)
 
     lines = [
         f"False positive rate by {sensitive_attr} (development set, out-of-fold)",
-        "(share of people who did NOT reoffend, but were predicted to)",
+        "(share of people who did NOT reoffend/have positive target, but were predicted to)",
         "",
     ]
-    for label, col in [("Our model", "y_pred_model"), ("COMPAS's own score", "y_pred_compas")]:
+    
+    models_to_report = [("Our model", "y_pred_model")]
+    
+    # Só calcula o COMPAS se a coluna existir (se estivermos no problema original)
+    if "score_text" in df.columns:
+        df["y_pred_compas"] = (df["score_text"] != "Low").astype(int)
+        models_to_report.append(("COMPAS's own score", "y_pred_compas"))
+
+    for label, col in models_to_report:
         lines.append(f"  {label}:")
         for group, g in df.groupby(sensitive_attr):
             negatives = g[g["y_true"] == 0]

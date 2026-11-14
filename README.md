@@ -84,6 +84,38 @@ On our new automatic scoreboard, AdaBoost is in 1st place with a score of 0.726 
 
 For now, we are upgrading and choosing to use the TUNED ADABOOST.
 
+----------------------
+# Week 8
+
+This week, we added Feature Selection to remove useless data before training. Our tuned AdaBoost model with Feature Selection gave us very good results. Our new main score (ROC-AUC) is 0.723. There is no sign of overfitting. The gap between training and testing is incredibly small (just +0.012). The overall accuracy is 67.9%, remaining very close to last week's peak, but now using a simpler, lighter model.
+
+(Precision vs. Recall)
+
+Tuned AdaBoost (with Feature Selection): When the model says someone will reoffend, it is right 67% of the time (precision). It successfully catches 56% of the real reoffenders (recall). This is a great balance because it catches many cases without making too many false alarms, using even less data than before.
+
+Fairness Analysis (False Positive Rate)
+
+COMPAS Baseline: The original system was very unfair. It wrongly flagged 45% of innocent African-Americans as a risk, but only 23% of innocent Caucasians.
+
+Tuned AdaBoost (with Feature Selection): Our new model keeps the great fairness results from last week. The error rate shifted slightly to 30% for African-Americans and 16% for Caucasians. The historical bias is still there, but our model is much fairer than the real COMPAS software.
+
+On our automatic scoreboard, last week's AdaBoost (without selection) is technically still in 1st place with a score of 0.726, but our new model is right behind it at 0.723. Because it scores almost the same while using fewer features, it is actually a more efficient algorithm.
+
+For now, we are upgrading and choosing to use the TUNED ADABOOST WITH FEATURE SELECTION.
+
+---------------------
+# WEEK 9
+
+The tuned Hist Gradient Boosting model achieved good results, hitting all the target scores for this challenge. Our main score (ROC-AUC) reached 0.906. The model is highly stable, showing a very small train-validation gap of just +0.016. The overall accuracy is 85.6%, proving the model adapted perfectly to a completely new problem.
+
+(Precision vs. Recall)
+
+Tuned Hist Gradient Boosting: When the model predicts someone makes over $50K, it is correct 76% of the time (precision). It successfully catches 58% of the actual high earners (recall). This is a strong balance for a highly imbalanced dataset where only 24% of people earn over $50K.
+
+Fairness Analysis (False Positive Rate)
+Model Fairness by Sex: Since we are using a new dataset, we now evaluate fairness based on gender instead of race. The False Positive Rate (predicting someone earns >$50K when they actually don't) is very low overall. The error rate is just 8% for Males and 2% for Females. (Note: The original COMPAS baseline does not apply to this financial dataset).
+
+
 -----------------------
 (para dar push e pull faço: 
 git add .

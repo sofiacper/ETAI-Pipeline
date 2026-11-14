@@ -1,3 +1,4 @@
+import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.dummy import DummyClassifier
@@ -9,6 +10,8 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.pipeline import Pipeline
 from sklearn.random_projection import SparseRandomProjection
 from src.preprocessing import build_preprocessor
+from sklearn.feature_selection import SelectorMixin
+from sklearn.base import BaseEstimator
 
 def oblique_random_forest(n_estimators: int = 100, n_components: int = 10, density="auto",
                           random_state=None, n_jobs=None, **tree_params):
@@ -33,6 +36,27 @@ def adaboost(max_depth: int = 1, **params):
     """
     return AdaBoostClassifier(estimator=DecisionTreeClassifier(max_depth=max_depth), **params)
 
+
+class VoteSelector(SelectorMixin, BaseEstimator):
+    """Keeps the features chosen by at least `min_votes` of three models, fitted on the training rows only."""
+
+    def __init__(self, min_votes: int = 2, random_state=None):
+        self.min_votes = min_votes
+        self.random_state = random_state
+
+    def fit(self, X, y):
+        forest = RandomForestClassifier(n_estimators=200, min_samples_leaf=20, random_state=self.random_state, n_jobs=-1).fit(X, y)
+        booster = GradientBoostingClassifier(random_state=self.random_state).fit(X, y)
+        lasso = LogisticRegression(l1_ratio=1.0, C=0.01, solver="saga", max_iter=5000).fit(X, y)
+        self.votes_ = ((forest.feature_importances_ > forest.feature_importances_.mean()).astype(int)
+                       + (booster.feature_importances_ > booster.feature_importances_.mean())
+                       + (np.abs(lasso.coef_[0]) > 1e-8))
+        self.support_ = self.votes_ >= self.min_votes
+        return self
+
+    def _get_support_mask(self):
+        return self.support_
+
 _MODELS = {
     "dummy": DummyClassifier,
     "logistic_regression": LogisticRegression,
@@ -55,14 +79,12 @@ def build_model(model_config: dict):
 
     return _MODELS[model_type](**params)
 
-def build_pipeline(preprocessing_config: dict, model_config: dict) -> Pipeline:
-    """
-    The estimator that is cross-validated, tuned and refit: preprocessing and model as one
-    Pipeline, so every learned step is re-fit on the training part of each fold. Step names
-    address hyperparameters from outside (`model__max_depth`, `prep__numeric__impute__strategy`).
-    Any new learned step (e.g. feature selection) belongs here, between "prep" and "model".
-    """
-    return Pipeline([
-        ("prep", build_preprocessor(preprocessing_config)),
-        ("model", build_model(model_config)),
-    ])
+def build_pipeline(preprocessing_config: dict, model_config: dict, selection_config: dict = None) -> Pipeline:
+    steps = [("prep", build_preprocessor(preprocessing_config))]
+    
+    if selection_config and selection_config.get("enabled", False):
+        steps.append(("select", VoteSelector(min_votes=selection_config.get("min_votes", 2), random_state=42)))
+        
+    steps.append(("model", build_model(model_config)))
+    
+    return Pipeline(steps)

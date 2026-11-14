@@ -100,3 +100,9 @@ tuning:
 output:
   results_dir: "results"
   scoreboard: "results/runs.csv"
+
+feature_selection:
+  enabled: true
+  min_votes: 2
+  search_space:
+    select__min_votes: {type: int, low: 1, high: 3}

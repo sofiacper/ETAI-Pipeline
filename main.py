@@ -1,4 +1,5 @@
 import os
+import sys
 import optuna
 import yaml
 import numpy as np
@@ -13,12 +14,11 @@ from src.evaluate import build_scorers, cross_validate_pipeline, cv_report, oof_
 from src.tuning import tune_pipeline, nested_cross_validate, tuning_report
 from src.results import save_run
 
-def load_config(path: str = "config.yaml") -> dict:
+def load_config(path: str) -> dict:
     with open(path, "r") as f:
         return yaml.safe_load(f)
 
 def save_scores(path: str, row: dict) -> pd.DataFrame:
-    """Appends one run to the CSV at `path` (created if needed) and returns all runs."""
     runs = pd.read_csv(path, dtype={"run": str}) if os.path.exists(path) else pd.DataFrame()
     runs = pd.concat([runs, pd.DataFrame([row])], ignore_index=True)
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
@@ -26,7 +26,9 @@ def save_scores(path: str, row: dict) -> pd.DataFrame:
     return runs
 
 def main():
-    config = load_config()
+    config_path = sys.argv[1] if len(sys.argv) > 1 else "config.yaml"
+    config = load_config(config_path)
+    
     run = datetime.now().strftime("%Y%m%d_%H%M%S")
     model_type = config["model"]["type"]
 
@@ -37,7 +39,6 @@ def main():
     mnar_sources = config["preprocessing"].get("mnar_indicator_sources", [])
     X, y, extras = split_features_target(df_clean, config["data"], mnar_sources)
 
-    # From here on, every decision uses the development set only; the test set stays locked.
     X_dev, X_test, y_dev, y_test, extras_dev, extras_test = split_dev_test(
         X, y, extras,
         test_size=config["test_set"]["size"],
@@ -57,8 +58,9 @@ def main():
     print(f"Model: {model_type}   |   selection metric: {selection_metric}   |   {cv_config['n_splits']}-fold CV")
     print(f"Data:  {len(X_dev)} development rows   |   {len(X_test)} test rows locked away (not used)")
 
-    pipeline = build_pipeline(config["preprocessing"], config["model"])
-    floor_pipeline = build_pipeline(config["preprocessing"], {"type": "dummy"})
+    selection_config = config.get("feature_selection", {})
+    pipeline = build_pipeline(config["preprocessing"], config["model"], selection_config)
+    floor_pipeline = build_pipeline(config["preprocessing"], {"type": "dummy"}, selection_config)
     
     floor_scores, _ = cross_validate_pipeline(floor_pipeline, X_dev, y_dev, cv,
                                               {selection_metric: scorers[selection_metric]}, selection_metric, n_jobs)
@@ -66,11 +68,11 @@ def main():
     
     floor, untuned = floor_scores["validation"].mean(), fold_scores["validation"].mean()
 
-    print("\nDefault hyperparameters (config.yaml)")
+    print("\nDefault hyperparameters")
     print(f"  {selection_metric}: {untuned:.3f} ± {fold_scores['validation'].std(ddof=1):.3f}   "
           f"train-validation gap: {fold_scores['gap'].mean():+.3f}   no-model floor: {floor:.3f}")
           
-    report = (f"Hyperparameters from config.yaml: {config['model'].get('params')}\n\n"
+    report = (f"Hyperparameters: {config['model'].get('params')}\n\n"
               + cv_report(fold_scores, metrics, selection_metric, "Cross-validation")
               + f"\n\nNo-model floor (dummy, same folds): {selection_metric} = {floor:.3f}")
     
@@ -81,9 +83,12 @@ def main():
     if tuning_enabled:
         search_spaces = tuning_config.get("search_spaces") or {}
         if model_type not in search_spaces:
-            raise ValueError(f"tuning is enabled but config.yaml has no tuning.search_spaces for "
-                             f"'{model_type}'. Add one, or set tuning.enabled: false.")
+            raise ValueError(f"tuning is enabled but config has no tuning.search_spaces for '{model_type}'.")
+        
         search_space = search_spaces[model_type]
+        if selection_config.get("enabled", False) and "search_space" in selection_config:
+            search_space.update(selection_config["search_space"])
+            
         n_trials = tuning_config["n_trials"]
         tuning_seed = tuning_config["random_state"]
         optuna.logging.set_verbosity(optuna.logging.WARNING)
@@ -112,13 +117,13 @@ def main():
         print(f"  {name:<18s} {final_scores[name].mean():.3f} ± {final_scores[name].std(ddof=1):.3f}")
     
     report += "\n\n" + oof_classification_report(y_dev, oof_proba)
-    report += "\n" + fairness_report(y_dev, oof_proba, extras_dev, sensitive_attr=config["data"]["sensitive_attr"])
+    report += "\n" + fairness_report(y_dev, oof_proba, extras_dev, sensitive_attr=config["data"].get("sensitive_attr"))
 
     pipeline.fit(X_dev, y_dev)
     refit = f"Final model: {model_type} refit on all {len(X_dev)} development rows."
     report += "\n" + refit + "\n"
 
-    # Criar o Scoreboard automático num CSV
+    # Scoreboard
     row = {"run": run, "data": config["data"]["path"], "model": model_type, "tuned": tuning_enabled,
            "encoder": config["preprocessing"]["encoder"], "scaler": config["preprocessing"]["scaler"],
            "params": str(config["model"].get("params")), "tuned_params": str(study.best_params) if tuning_enabled else "",
@@ -141,6 +146,28 @@ def main():
     results_dir = config.get("output", {}).get("results_dir", "results")
     path = save_run(results_dir, config, report)
     print(f"\n{refit}\nFull report saved to {path}")
+
+    # PREVER PARA PESSOAS NOVAS 
+    predict_path = config.get("data", {}).get("predict_path")
+    if predict_path and os.path.exists(predict_path):
+        print(f"\nPredicting on new data: {predict_path}")
+        df_new = pd.read_csv(predict_path)
+        # Limpar da mesma forma, mas SEM apagar duplos
+        df_new_clean = clean_dataset(df_new, config["diagnostics"])
+        X_new, _, _ = split_features_target(df_new_clean, config["data"], mnar_sources)
+        
+        proba_new = pipeline.predict_proba(X_new)[:, 1]
+        pred_new = (proba_new >= 0.5).astype(int)
+        
+        id_col = config["diagnostics"].get("id_column")
+        out_df = pd.DataFrame({
+            id_col: df_new[id_col],
+            "probability": proba_new,
+            "prediction": pred_new
+        })
+        out_file = os.path.join(results_dir, f"predictions_{run}.csv")
+        out_df.to_csv(out_file, index=False)
+        print(f"Predictions saved to {out_file} (Rows in: {len(df_new)}, Rows out: {len(out_df)})")
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,69 @@
+data:
+  path: "data/adult_train.csv"
+  predict_path: "data/adult_new.csv"
+  target: "income_over_50k"
+  sensitive_attr: "sex"
+  drop_columns: ["id"]
+
+test_set:
+  size: 0.2
+  random_state: 42
+
+cv:
+  n_splits: 5
+  shuffle: true
+  random_state: 42
+  metrics: ["accuracy", "balanced_accuracy", "precision", "recall", "f1", "fbeta_2", "roc_auc", "average_precision"]
+  selection_metric: "roc_auc"
+  n_jobs: 1
+
+diagnostics:
+  id_column: "id"
+  placeholder_tokens: ["?"]
+  validity_rules:
+    age: {min: 17, max: 90}
+    hours_per_week: {min: 1, max: 99}
+    capital_gain: {min: 0}
+    capital_loss: {min: 0}
+
+preprocessing:
+  encoder: "target"
+  scaler: "robust"
+  numeric_features: ["age", "fnlwgt", "education_num", "capital_gain", "capital_loss", "hours_per_week", "v01", "v02", "v03", "v04", "v05", "v06", "v07", "v08", "v09", "v10", "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18"]
+  categorical_features: ["workclass", "education", "marital_status", "occupation", "relationship", "race", "native_country", "v19", "v20", "v21", "v22", "v23", "v24", "v25"]
+  mnar_indicator_sources: ["workclass", "occupation"]
+  random_state: 42
+  imputation:
+    numeric_strategy: "median"
+    categorical_strategy: "most_frequent"
+
+feature_selection:
+  enabled: true
+  min_votes: 2
+  search_space:
+    select__min_votes: {type: int, low: 1, high: 3}
+
+model:
+  type: "hist_gradient_boosting"
+  params:
+    random_state: 42
+
+tuning:
+  enabled: true
+  n_trials: 5
+  n_splits: 5
+  random_state: 42
+  search_spaces:
+    hist_gradient_boosting:
+      model__max_iter: {type: int, low: 25, high: 200, log: true}
+      model__learning_rate: {type: float, low: 0.01, high: 0.5, log: true}
+      model__max_leaf_nodes: {type: int, low: 2, high: 63, log: true}
+      model__min_samples_leaf: {type: int, low: 5, high: 200, log: true}
+      model__l2_regularization: {type: float, low: 0.000001, high: 10.0, log: true}
+    decision_tree:
+      model__max_depth: {"type": "int", "low": 1, "high": 20}
+      model__min_samples_leaf: {"type": "int", "low": 1, "high": 200, "log": true}
+
+output:
+  results_dir: "results"
+  scoreboard: "results/runs_adult.csv"
