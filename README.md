@@ -14,7 +14,8 @@ go on.
 
 ```
 .
-├── main.py                  # entry point: run the whole pipeline
+├── main.py                  # entry point: train, evaluate and save the model
+├── predict.py               # entry point: predict a new CSV with the saved model (week 10)
 ├── config.yaml               # all tunable settings live here
 ├── requirements.txt
 ├── src/
@@ -25,8 +26,10 @@ go on.
 │   ├── tuning.py             # hyperparameter tuning with Optuna + nested cross-validation (week 5)
 │   └── results.py            # saves each run's report to disk, and its scores to the runs table (week 7)
 ├── results/                  # created automatically -- one report per run + runs.csv, the table of all runs (not tracked in git)
+├── models/                   # created automatically -- model.joblib, the final fitted pipeline (not tracked in git)
 └── data/
     ├── compas_two_year_recidivism.csv
+    ├── compas_new_people.csv  # 20 people without the target, to try predict.py
     └── README.md              # problem description + full data dictionary
 ```
 
@@ -43,6 +46,7 @@ This table is updated after each practical class, so you can always see what cha
 | 6 | Ensembles in depth: random forest, oblique random forest, AdaBoost | Two new model types in `src/model.py`: `oblique_random_forest` (a forest of oblique trees built from scikit-learn parts -- every tree splits on its own random sparse linear combinations of the features, via `SparseRandomProjection` inside `BaggingClassifier`) and `adaboost` (AdaBoost over decision trees of a chosen depth; stumps by default), both registered in `_MODELS`; the random forest is now the model `main.py` runs (200 trees, all CPU cores); `config.yaml` gains search spaces for the three ensembles -- the forests tune tree size (`max_depth`, `min_samples_leaf`) and decorrelation (`max_features` / number of combinations) but not the number of trees, AdaBoost tunes its base trees' depth, its number of rounds and its learning rate; `corrected_paired_test()` in `src/evaluate.py` compares two models scored on the same folds (Nadeau & Bengio's corrected paired t-test), so a "winner" is only called when the difference is bigger than fold-to-fold noise; `scipy` listed in `requirements.txt` (it already came with scikit-learn, so nothing new to install) -- see "Ensembles" below |
 | 7 | Gradient boosting + evaluating with probabilities | Three new model types in `src/model.py`: `gradient_boosting` (scikit-learn's `GradientBoostingClassifier`: each shallow tree fits the gradient of the log-loss left by the trees before it), `hist_gradient_boosting` (the same idea on binned features: much faster on large data, and it handles missing values itself) and `naive_bayes` (`GaussianNB`, a fast probabilistic baseline); gradient boosting is now the model `main.py` runs, each with its search space in `config.yaml`; evaluation now reports **several metrics** (accuracy, balanced accuracy, precision, recall, F1, F-beta, ROC-AUC, PR-AUC) and one **selection metric** (`cv.selection_metric`, ROC-AUC) that tuning maximises and runs are ranked by; out-of-fold **probabilities** (not just labels) feed the reports, with a confusion matrix; `class_weight: balanced` in the commented examples of the models that support it; new `save_scores()` in `src/results.py`: every run adds a row to `results/runs.csv` (the model and its settings, the score on each fold, the no-model floor and the untuned score on the same folds), so any two runs on the same data and folds can be compared with `corrected_paired_test()`; the printed output was reorganised to be easier to read, with the full tables in the results file (optional: keep your own format if you prefer) -- see "Model evaluation" below |
 | 8 | XGBoost + feature selection | New model type `xgboost` (`XGBClassifier`, from the `xgboost` package: gradient boosting with extra regularisation, multi-threaded, handles missing values itself), now the model `main.py` runs, with its search space in `config.yaml`; **feature selection** as a learned step of the Pipeline: new `VoteSelector` class in `src/model.py` (a random forest, gradient boosting and an L1 logistic regression vote; features with at least `min_votes` votes are kept), placed between `"prep"` and `"model"` by `build_pipeline()` when the new `feature_selection` section of `config.yaml` switches it on, so it is re-fitted on the training rows of every fold (never on the rows it is scored on); with tuning on, `select__min_votes` is tuned with the model and assessed by nested CV; the pipeline caches fitted preprocessing and selection steps during a run (`Pipeline(memory=...)`, a temporary folder deleted at the end), so tuning doesn't refit them in every trial; the final model's kept features are printed, and the scoreboard records the selection setting -- see "Feature selection" below |
+| 10 | Missing values + a deployable pipeline | The numeric imputer is a config choice (`preprocessing.imputation.numeric_strategy`): `median`, `mean`, `knn` (`KNNImputer`), `iterative` (MICE with one completed dataset, `IterativeImputer`) or `random_forest` (the missForest idea: `IterativeImputer` with a random forest per column); the numeric columns are now scaled **before** they are imputed (scalers ignore gaps when fitting, and KNN needs one scale); none of the imputers looks at the target, so they also run on new data; the runs table and report record the imputer; `main.py` **saves the final fitted pipeline** to `models/model.joblib`; new **`predict.py`**: `python predict.py new.csv predictions.csv` cleans the file with the same rules (no rows dropped) and writes one row per input row (id, probability, prediction); `data/compas_new_people.csv` to try it -- see "Missing values" and "Predicting new data" below |
 
 ## Preprocessing decisions
 
@@ -109,6 +113,27 @@ It returns the mean difference, the folds the first run wins, t and the p-value.
 Set `feature_selection.enabled` in `config.yaml` to add the `"select"` step between preprocessing and the model. `VoteSelector` fits three models on the training rows (a random forest, gradient boosting, and an L1-penalised logistic regression); each votes for the features it finds useful (above-average importance, or a non-zero coefficient), and features with at least `min_votes` votes are kept. Because it learns from the labels, it lives **inside** the Pipeline and is re-fitted in every fold; selecting features on all rows before cross-validation would make the score optimistic. With tuning on, `feature_selection.search_space` is added to the model's search space, so `min_votes` is chosen with the model's hyperparameters and assessed by nested CV. The features the final model keeps are printed at the end of each run.
 
 **XGBoost** is a separate package: see "Installing XGBoost" below if `import xgboost` fails.
+
+## Missing values
+
+Gaps in categorical columns are filled with the most frequent value. For numeric columns, `preprocessing.imputation.numeric_strategy` chooses how:
+
+| `numeric_strategy` | Fills a gap with | Notes |
+|---|---|---|
+| `median` / `mean` | the column's median / mean on the training rows | fast baselines |
+| `knn` | the mean of the `n_neighbors` most similar rows | needs scaled columns (the pipeline scales first) |
+| `iterative` | a prediction from the other numeric columns, refined over `max_iter` rounds (MICE, one completed dataset) | |
+| `random_forest` | the same, with a random forest per column (missForest) | the slowest |
+
+All of them are fitted on the training rows of each fold, inside the Pipeline, and none uses the target, so the same imputer runs on new data in `predict.py`. They only see the numeric columns. The `<col>_was_missing` flags (`mnar_indicator_sources`) keep the fact that a value was missing, for the columns where that is informative.
+
+## Predicting new data
+
+At the end of every run, `main.py` saves the final model (the whole fitted Pipeline: imputers, encoders, selected features and model, refit on all development rows) to `models/model.joblib` (`output.model_path` in `config.yaml`; each run overwrites it). To predict a CSV with the same columns as the training data (the target isn't needed):
+```bash
+python predict.py data/compas_new_people.csv predictions.csv
+```
+The output has one row per input row: the id, the probability and the prediction (at 0.5). The new file is cleaned with the rules in `config.yaml` and never de-duplicated: every row gets a prediction.
 
 ## Environment setup
 
@@ -221,7 +246,7 @@ This loads `config.yaml`, diagnoses and cleans the data (week 3), locks the fina
 - with tuning on, **Tuning**: the nested cross-validation score (the honest score of the tuned model) and the chosen hyperparameters
 - **All metrics**: mean ± std of every metric
 - **Scoreboard**: this run next to the earlier runs on the same data and metric, best first
-- the final model (refit on all development rows), the features it keeps (with feature selection on) and where the full report was saved
+- the final model (refit on all development rows), the features it keeps (with feature selection on), where the full report was saved and where the model was saved for `predict.py`
 
 The full detail -- per-fold tables for every metric, the tuning report, the out-of-fold confusion matrix and classification report, the false-positive-rate-by-race comparison with COMPAS's own score -- goes to the results file.
 

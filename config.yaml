@@ -57,10 +57,13 @@ preprocessing:
   numeric_features: ["age", "juv_fel_count", "juv_misd_count", "juv_other_count", "priors_count"]
   categorical_features: ["sex", "age_cat", "c_charge_degree"]
   mnar_indicator_sources: ["priors_count", "c_charge_degree"]   # get a <col>_was_missing flag
-  random_state: 42                                  # target encoder's internal folds
+  random_state: 42                                  # target encoder's folds and the model-based imputers
   imputation:
-    numeric_strategy: "median"
+    numeric_strategy: "median"                      # median | mean | knn | iterative | random_forest
     categorical_strategy: "most_frequent"
+    n_neighbors: 5                                  # knn
+    max_iter: 10                                    # iterative, random_forest
+    n_estimators: 50                                # random_forest (trees per column)
 
 model:
   type: "xgboost"  # dummy | logistic_regression | naive_bayes | decision_tree | random_forest | oblique_random_forest | adaboost | gradient_boosting | hist_gradient_boosting | xgboost
@@ -139,4 +142,5 @@ tuning:
 
 output:
   results_dir: "results"
+  model_path: "models/model.joblib"                 # the final fitted pipeline, used by predict.py (overwritten each run)
   scoreboard: "results/runs.csv"                    # one row per run; delete it when the data, cleaning or folds change

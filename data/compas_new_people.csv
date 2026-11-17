@@ -1,0 +1,21 @@
+juv_other_count,priors_count,juv_misd_count,juvenile_total,sex,age_cat,id,c_charge_degree,juv_fel_count,age_in_months,race,prior_offenses,age
+0,4.0,0,0.0,Male,25 - 45,900001,F,0.0,528.0,Caucasian,4.0,44.0
+0,0.0,0,0.0,Male,25 - 45,900002,M,0.0,,Caucasian,0.0,
+0,4.0,0,0.0,Female,Greater than 45,900003,F,0.0,636.0,Caucasian,4.0,53.0
+0,?,0,0.0,Male,Less than 25,900004,M,0.0,264.0,African-American,0.0,22.0
+0,1.0,0,0.0,Male,25 - 45,900005,F,0.0,300.0,African-American,1.0,25.0
+0,4.0,0,0.0,Female,25 - 45,900006,M,0.0,300.0,African-American,4.0,25.0
+0,1.0,0,0.0,Male,Less than 25,900007,F,0.0,288.0,African-American,1.0,24.0
+0,3.0,0,0.0,Female,25 - 45,900008,M,0.0,468.0,African-American,3.0,
+0,1.0,0,0.0,Female,Greater than 45,900009,M,0.0,540.0,Native American,1.0,45.0
+0,2.0,0,0.0,Male,25 - 45,900010,F,0.0,516.0,Caucasian,2.0,43.0
+0,0.0,0,0.0,Male,25 - 45,900011,M,0.0,492.0,African-American,0.0,41.0
+4,14.0,4,8.0,Male,25 - 45,900012,X,0.0,300.0,African-American,14.0,25.0
+0,2.0,0,0.0,Female,25 - 45,900013,Felony,0.0,300.0,?,2.0,25.0
+0,14.0,2,3.0,Male,25 - 45,900014,F,1.0,432.0,African-American,14.0,36.0
+0,4.0,0,0.0,Male,25 - 45,900015,M,0.0,432.0,African-American,4.0,36.0
+0,4.0,0,0.0,Male,25 - 45,900016,M,0.0,432.0,African-American,4.0,36.0
+0,2.0,0,1.0,Male,Less than 25,900017,,1.0,264.0,African-American,2.0,22.0
+0,0.0,0,0.0,Female,25 - 45,900018,F,0.0,300.0,Caucasian,0.0,25.0
+0,,0,0.0,Male,Greater than 45,900019,F,0.0,552.0,Caucasian,,46.0
+0,1.0,0,0.0,MALE,Less than 25,900020,F,0.0,276.0,African-American,1.0,23.0
