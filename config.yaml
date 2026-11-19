@@ -95,8 +95,12 @@ preprocessing:
   # seed for the target encoder's internal cross-fitting (week 4: sklearn's TargetEncoder)
   random_state: 42
   imputation:
-    numeric_strategy: "median"        # applies to age, juv_fel_count, juv_misd_count, juv_other_count, priors_count
-    categorical_strategy: "most_frequent"   # applies to sex, age_cat, c_charge_degree
+    numeric_strategy: "median"        # one of: median | mean | knn | iterative | random_forest
+    categorical_strategy: "most_frequent"
+    # Extra knobs for the model-based imputers (ignored by median/mean):
+    #   n_neighbors: 5      # knn
+    #   max_iter: 10        # iterative / random_forest
+    #   n_estimators: 50    # random_forest (missForest)
 
 # Week 8: feature selection -- a learned step between preprocessing and the model. Keeps the
 # features that at least `min_votes` of three models (random forest, gradient boosting, L1
@@ -183,3 +187,9 @@ tuning:
 output:
   results_dir: "results"   # each run's full report is saved here as run_<config>_<date>.txt
   scoreboard: "results/runs.csv"   # one row per run, appended; compare only runs on the same data, cleaning and folds
+
+# Week 10 (deployment): after training, predict the unseen COMPAS people with predict.py.
+prediction:
+  model_path: "models/model.joblib"           # the final fitted pipeline, saved by main.py
+  new_data_path: "data/compas_new_people.csv"
+  output_path: "results/compas_new_predictions.csv"

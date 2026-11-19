@@ -71,8 +71,12 @@ preprocessing:
   engineered_features: {}
   random_state: 42
   imputation:
-    numeric_strategy: "median"
+    numeric_strategy: "median"        # one of: median | mean | knn | iterative | random_forest
     categorical_strategy: "most_frequent"
+    # Extra knobs for the model-based imputers (ignored by median/mean):
+    #   n_neighbors: 5      # knn
+    #   max_iter: 10        # iterative / random_forest
+    #   n_estimators: 50    # random_forest (missForest)
 
 # Week 8: feature selection. Left on so it can decide which of the 25 anonymised `v` columns
 # actually help (that decision is one of today's questions). Turn off for a first smoke test.
